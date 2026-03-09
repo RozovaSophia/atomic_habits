@@ -1,9 +1,14 @@
-from celery.loaders import app
-from celery.schedules import crontab
+import os
+from celery import Celery
 
-app.conf.beat_schedule = {
-    'send-habit-reminders': {
-        'task': 'telegram.tasks.send_habit_reminders',
-        'schedule': crontab(minute='*/30'),  # Каждые 30 минут
-    },
-}
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+
+app = Celery('config')
+
+app.config_from_object('django.conf:settings', namespace='CELERY')
+
+app.autodiscover_tasks()
+
+@app.task(bind=True, ignore_result=True)
+def debug_task(self):
+    print(f'Request: {self.request!r}')

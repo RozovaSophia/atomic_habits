@@ -92,3 +92,43 @@ def send_test_notification(user_id, chat_id):
     except Exception as e:
         logger.error(f"Ошибка отправки тестового уведомления: {e}")
         return None
+
+
+from celery import shared_task
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+@shared_task
+def test_celery():
+    """Тестовая задача для проверки работы Celery"""
+    logger.info("Celery работает правильно!")
+    return "Celery task executed successfully"
+
+
+@shared_task
+def send_habit_reminders():
+    """Отправка напоминаний о привычках"""
+    from habits.models import Habit
+    from datetime import datetime
+    from .bot import TelegramBot
+
+    bot = TelegramBot()
+    current_time = datetime.now().time()
+
+    habits = Habit.objects.filter(
+        time__hour=current_time.hour,
+        time__minute=current_time.minute,
+        user__telegram_chat_id__isnull=False
+    )
+
+    sent_count = 0
+    for habit in habits:
+        message = f"Напоминание: {habit.action} в {habit.place}"
+        result = bot.send_message(habit.user.telegram_chat_id, message)
+        if result and result.get('ok'):
+            sent_count += 1
+
+    logger.info(f"Отправлено {sent_count} напоминаний")
+    return f"Sent {sent_count} reminders"

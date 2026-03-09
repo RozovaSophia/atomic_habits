@@ -116,12 +116,15 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 5,
 }
 
-CELERY_BROKER_URL = os.getenv('REDIS_URL', 'redis://localhost:6379')
-CELERY_RESULT_BACKEND = os.getenv('REDIS_URL', 'redis://localhost:6379')
+CELERY_BROKER_URL = os.getenv('REDIS_URL', 'redis://redis:6379')
+CELERY_RESULT_BACKEND = os.getenv('REDIS_URL', 'redis://redis:6379')
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', '')
 TELEGRAM_BOT_USERNAME = os.getenv('TELEGRAM_BOT_USERNAME', '')

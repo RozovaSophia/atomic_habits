@@ -8,6 +8,20 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "amqp (==5.3.1)",
+    "asgiref (==3.11.1)",
+    "billiard (==4.2.4)",
+    "celery (==5.6.2)",
+    "certifi (==2026.2.25)",
+    "charset-normalizer (==3.4.4)",
+    "click (==8.3.1)",
+    "click-didyoumean (==0.3.1)",
+    "click-plugins (==1.1.1.2)",
+    "click-repl (==0.3.0)",
+    "colorama (==0.4.6)",
+    "coverage (==7.13.4)",
+    "cron-descriptor (==1.4.5)",
+    "django (==4.2.7)"
 ]
 
 
