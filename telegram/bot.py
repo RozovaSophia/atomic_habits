@@ -1,6 +1,7 @@
+import logging
+
 import requests
 from django.conf import settings
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -10,14 +11,10 @@ class TelegramBot:
         self.token = settings.TELEGRAM_BOT_TOKEN
         self.api_url = f"https://api.telegram.org/bot{self.token}"
 
-    def send_message(self, chat_id, text, parse_mode='HTML'):
+    def send_message(self, chat_id, text, parse_mode="HTML"):
         """Отправка сообщения пользователю"""
         url = f"{self.api_url}/sendMessage"
-        data = {
-            'chat_id': chat_id,
-            'text': text,
-            'parse_mode': parse_mode
-        }
+        data = {"chat_id": chat_id, "text": text, "parse_mode": parse_mode}
         try:
             response = requests.post(url, json=data, timeout=10)
             response.raise_for_status()
@@ -29,7 +26,7 @@ class TelegramBot:
     def set_webhook(self, webhook_url):
         """Установка вебхука для бота"""
         url = f"{self.api_url}/setWebhook"
-        data = {'url': webhook_url}
+        data = {"url": webhook_url}
         try:
             response = requests.post(url, json=data, timeout=10)
             return response.json()

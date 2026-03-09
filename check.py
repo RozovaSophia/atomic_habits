@@ -1,5 +1,7 @@
 import sys
+
 import django
+
 
 def check_python_version():
     print(f"Python version: {sys.version}")
@@ -12,6 +14,7 @@ def check_python_version():
         print("✅ Python version is compatible")
     return True
 
+
 def check_django_version():
     print(f"Django version: {django.get_version()}")
     if django.VERSION < (4, 2):
@@ -22,6 +25,7 @@ def check_django_version():
     else:
         print("✅ Django version is compatible")
     return True
+
 
 if __name__ == "__main__":
     print("=== Проверка совместимости версий ===\n")

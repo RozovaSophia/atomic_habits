@@ -1,11 +1,14 @@
 import json
 import logging
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth import get_user_model
-from django.utils import timezone
 from datetime import datetime, timedelta
+
+from django.contrib.auth import get_user_model
+from django.http import JsonResponse
+from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
+
 from habits.models import Habit
+
 from .bot import TelegramBot, get_bot_commands
 
 logger = logging.getLogger(__name__)
@@ -16,16 +19,16 @@ bot = TelegramBot()
 @csrf_exempt
 def telegram_webhook(request):
     """Обработка входящих сообщений от Telegram"""
-    if request.method == 'POST':
+    if request.method == "POST":
         try:
             data = json.loads(request.body)
             logger.info(f"Получено сообщение: {data}")
 
             # Обработка сообщений
-            if 'message' in data:
-                handle_message(data['message'])
-            elif 'callback_query' in data:
-                handle_callback(data['callback_query'])
+            if "message" in data:
+                handle_message(data["message"])
+            elif "callback_query" in data:
+                handle_callback(data["callback_query"])
 
             return JsonResponse({"ok": True})
         except Exception as e:
@@ -37,10 +40,10 @@ def telegram_webhook(request):
 
 def handle_message(message):
     """Обработка текстовых сообщений"""
-    chat_id = message['chat']['id']
-    text = message.get('text', '')
+    chat_id = message["chat"]["id"]
+    text = message.get("text", "")
 
-    if text.startswith('/'):
+    if text.startswith("/"):
         handle_command(chat_id, text, message)
     else:
         handle_regular_message(chat_id, text, message)
@@ -48,26 +51,28 @@ def handle_message(message):
 
 def handle_command(chat_id, command, message):
     """Обработка команд бота"""
-    command = command.lower().split('@')[0]
+    command = command.lower().split("@")[0]
 
-    if command == '/start':
+    if command == "/start":
         send_welcome_message(chat_id, message)
-    elif command == '/help':
+    elif command == "/help":
         send_help_message(chat_id)
-    elif command == '/my_habits':
+    elif command == "/my_habits":
         send_today_habits(chat_id, message)
-    elif command == '/tomorrow':
+    elif command == "/tomorrow":
         send_tomorrow_habits(chat_id, message)
-    elif command == '/connect':
+    elif command == "/connect":
         send_connect_instructions(chat_id)
     else:
-        bot.send_message(chat_id, "Неизвестная команда. Напишите /help для списка команд.")
+        bot.send_message(
+            chat_id, "Неизвестная команда. Напишите /help для списка команд."
+        )
 
 
 def send_welcome_message(chat_id, message):
     """Отправка приветственного сообщения"""
-    from_user = message.get('from', {})
-    username = from_user.get('first_name', 'Пользователь')
+    from_user = message.get("from", {})
+    username = from_user.get("first_name", "Пользователь")
 
     welcome_text = f"""
 Привет, {username}!
@@ -129,16 +134,13 @@ def send_connect_instructions(chat_id):
 
 def send_today_habits(chat_id, message):
     """Отправка привычек на сегодня"""
-    telegram_username = message.get('from', {}).get('username')
+    telegram_username = message.get("from", {}).get("username")
 
     try:
         user = User.objects.get(telegram_username=telegram_username)
 
         today = timezone.now().date()
-        habits = Habit.objects.filter(
-            user=user,
-            created_at__date=today
-        )
+        habits = Habit.objects.filter(user=user, created_at__date=today)
 
         if habits.exists():
             habits_text = "<b>Ваши привычки на сегодня:</b>\n\n"
@@ -154,25 +156,25 @@ def send_today_habits(chat_id, message):
         bot.send_message(chat_id, habits_text)
 
     except User.DoesNotExist:
-        bot.send_message(chat_id, """
+        bot.send_message(
+            chat_id,
+            """
 Ваш Telegram не привязан к аккаунту.
 
 Используйте команду /connect для получения инструкций по подключению.
-        """)
+        """,
+        )
 
 
 def send_tomorrow_habits(chat_id, message):
     """Отправка привычек на завтра"""
-    telegram_username = message.get('from', {}).get('username')
+    telegram_username = message.get("from", {}).get("username")
 
     try:
         user = User.objects.get(telegram_username=telegram_username)
 
         tomorrow = timezone.now().date() + timedelta(days=1)
-        habits = Habit.objects.filter(
-            user=user,
-            created_at__date=tomorrow
-        )
+        habits = Habit.objects.filter(user=user, created_at__date=tomorrow)
 
         if habits.exists():
             habits_text = "<b>Ваши привычки на завтра:</b>\n\n"
@@ -194,5 +196,3 @@ def handle_regular_message(chat_id, text, message):
 Я понимаю только команды. Напишите /help для списка доступных команд.
     """
     bot.send_message(chat_id, response)
-
-

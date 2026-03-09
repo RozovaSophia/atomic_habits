@@ -1,10 +1,13 @@
+import logging
+from datetime import datetime, timedelta
+
 from celery import shared_task
 from django.utils import timezone
-from datetime import datetime, timedelta
+
 from habits.models import Habit
 from users.models import User
+
 from .bot import TelegramBot
-import logging
 
 logger = logging.getLogger(__name__)
 bot = TelegramBot()
@@ -24,8 +27,8 @@ def send_habit_reminders():
     habits = Habit.objects.filter(
         time__hour=current_time.hour,
         time__minute__lte=current_time.minute + 30,
-        user__telegram_chat_id__isnull=False
-    ).select_related('user')
+        user__telegram_chat_id__isnull=False,
+    ).select_related("user")
 
     sent_count = 0
     for habit in habits:
@@ -36,7 +39,7 @@ def send_habit_reminders():
             message = create_reminder_message(habit)
             result = bot.send_message(habit.user.telegram_chat_id, message)
 
-            if result and result.get('ok'):
+            if result and result.get("ok"):
                 sent_count += 1
                 logger.info(f"Напоминание отправлено для привычки {habit.id}")
             else:
@@ -71,9 +74,7 @@ def create_reminder_message(habit):
 def calculate_time_until(habit_time):
     """Расчет времени до выполнения привычки в минутах"""
     now = timezone.now()
-    habit_datetime = timezone.make_aware(
-        datetime.combine(now.date(), habit_time)
-    )
+    habit_datetime = timezone.make_aware(datetime.combine(now.date(), habit_time))
 
     if habit_datetime < now:
         habit_datetime += timedelta(days=1)
@@ -94,8 +95,9 @@ def send_test_notification(user_id, chat_id):
         return None
 
 
-from celery import shared_task
 import logging
+
+from celery import shared_task
 
 logger = logging.getLogger(__name__)
 
@@ -110,8 +112,10 @@ def test_celery():
 @shared_task
 def send_habit_reminders():
     """Отправка напоминаний о привычках"""
-    from habits.models import Habit
     from datetime import datetime
+
+    from habits.models import Habit
+
     from .bot import TelegramBot
 
     bot = TelegramBot()
@@ -120,14 +124,14 @@ def send_habit_reminders():
     habits = Habit.objects.filter(
         time__hour=current_time.hour,
         time__minute=current_time.minute,
-        user__telegram_chat_id__isnull=False
+        user__telegram_chat_id__isnull=False,
     )
 
     sent_count = 0
     for habit in habits:
         message = f"Напоминание: {habit.action} в {habit.place}"
         result = bot.send_message(habit.user.telegram_chat_id, message)
-        if result and result.get('ok'):
+        if result and result.get("ok"):
             sent_count += 1
 
     logger.info(f"Отправлено {sent_count} напоминаний")
