@@ -1,0 +1,113 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: habit_postgres_dev
+    environment:
+      POSTGRES_DB: habit_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+    networks:
+      - habit_network_dev
+
+  redis:
+    image: redis:7-alpine
+    container_name: habit_redis_dev
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data_dev:/data
+    networks:
+      - habit_network_dev
+
+  django:
+    build: .
+    container_name: habit_django_dev
+    volumes:
+      - .:/app
+      - static_volume_dev:/app/static
+      - media_volume_dev:/app/media
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings
+      - DB_ENGINE=django.db.backends.postgresql
+      - DB_NAME=habit_db
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - REDIS_URL=redis://redis:6379
+      - DEBUG=True
+      - SECRET_KEY=dev-secret-key-12345
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - redis
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+    networks:
+      - habit_network_dev
+
+  celery_worker:
+    build: .
+    container_name: habit_celery_worker_dev
+    volumes:
+      - .:/app
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings
+      - DB_ENGINE=django.db.backends.postgresql
+      - DB_NAME=habit_db
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - REDIS_URL=redis://redis:6379
+      - DEBUG=True
+      - SECRET_KEY=dev-secret-key-12345
+    depends_on:
+      - postgres
+      - redis
+      - django
+    command: celery -A config worker --loglevel=info
+    networks:
+      - habit_network_dev
+
+  celery_beat:
+    build: .
+    container_name: habit_celery_beat_dev
+    volumes:
+      - .:/app
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings
+      - DB_ENGINE=django.db.backends.postgresql
+      - DB_NAME=habit_db
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - REDIS_URL=redis://redis:6379
+      - DEBUG=True
+      - SECRET_KEY=dev-secret-key-12345
+    depends_on:
+      - postgres
+      - redis
+      - django
+    command: celery -A config beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    networks:
+      - habit_network_dev
+
+volumes:
+  postgres_data_dev:
+  redis_data_dev:
+  static_volume_dev:
+  media_volume_dev:
+
+networks:
+  habit_network_dev:
+    driver: bridge
